@@ -1,0 +1,10 @@
+bookdown::gitbook:
+  number_sections: false
+  toc_depth: 2
+  css: style.css
+  config:
+    toc:
+      before: |
+        <li><a href="./">mltox</a></li>
+      after: |
+        <li><a href="https://github.com/VHP4Safety/pet-nams-ml" target="blank">Published with bookdown</a></li>

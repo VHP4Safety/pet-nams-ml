@@ -1,0 +1,150 @@
+---
+title: "Workshop on 'Machine Learning in Toxicology"
+author: ""
+site: bookdown::bookdown_site
+output: 
+    bookdown::gitbook:
+        css: style.css
+        number_sections: false
+        anchor_sections: false
+        split_by: chapter
+        config:
+            sharing:
+                 github: no
+                 facebook: no
+                 twitter: no
+                 all: no
+            toc:
+                collapse: section
+                scroll_highlight: yes
+                before: <li class="toc-logo"><a href="./"></a> <h4 class=".paddingtitel ">mltox</h2></li>
+header-includes:
+  - \usepackage{fontawesome5}
+---
+
+```{r include = FALSE}
+# Define the web addresses for the course
+# run as needed, not included automatically because of stuff (aka git complains)
+githuburl <- "https://github.com/VHP4Safety/pet-nams-ml"
+readerurl <- "https://rstudio-connect.hu.nl/mltox/"
+email <- "marc.teunis@hu.nl"
+
+save(
+    list = c("githuburl", "readerurl", "email"), 
+    file = "course_urls.RData")
+```
+
+
+```{r include = FALSE, eval = TRUE}
+# set CSS for objects
+knitr::opts_chunk$set(
+  class.source="Rchunk", 
+  class.output="Rout", 
+  warning = FALSE,
+  error = FALSE,
+  message = FALSE)
+```
+
+# Introduction {-}
+
+Download the source code [`r icons::fontawesome("github")`](`r githuburl`)
+
+[These workshop materials was produced for the New Approach Methods Course in the Post Graduate Education Track for Toxicology (PET))
+
+
+## Disclaimer on this work
+We would like to stress that the code and work included in this repo and workshop is experimental. It was not reviewed by a peer assessment process. The code, examples and work should be considered accordingly. The work is meant for illustrative and educational purposes. The authors do not take any responsibly for the use, re-use, application or derivates from the work included in this repository. We appreciate attribution of the original work and adapted work by the authors of this repo.
+
+## MLTOX
+Welcome to the workshop on "Machine Learning in Toxicology" (AiRA).
+This Workshop consists of 4 learning activities:
+
+ 1. An introduction to Tidymodels in R (adapted from the Tidymodels documentation)
+ 1. An introduction to Machine Learning approaches for classification of chemicals
+
+If you already are familiar with the `{tidymodels}` workflow, you might want to skip or only glimpse over activity 1.
+
+You can find these lessons in the menu on the left. Each lesson starts with a short introduction by the teachers. After that, you are supposed to study the lessons yourself and make the exercises. During the lessons, you can ask questions to the teachers and the teachers will provide feedback. 
+
+Please note: this is a crash course. We scheduled this course to allow you to throw yourself into R and be able to see yourself making progress very quickly. 
+
+We wish you good luck and we hope you will have a lot of fun with R!
+
+## Course material
+
+The course material consists of the following:
+
+- Instruction pages (menu to the left). 
+- Exercises.
+
+For a very good resource on using R in Data Science we highly recommend getting a copy of this book:
+ [R for Data Science](https://r4ds.had.co.nz/index.html). Part 2is based on the [Tidymodels documentation](https://www.tidymodels.org/). 
+ 
+Part 2 was adapted from [USEPA](https://github.com/USEPA/CompTox-PFASHalfLife). For the full publication on this work, we recommend reading: 
+
+```
+Dawson DE, Lau C, Pradeep P, Sayre RR, Judson RS, Tornero-Velez R, Wambaugh JF. A Machine Learning Model to Estimate Toxicokinetic Half-Lives of Per- and Polyfluoro-Alkyl Substances (PFAS) in Multiple Species. Toxics. 2023; 11(2):98. https://doi.org/10.3390/toxics11020098 
+```
+
+## R and RStudio
+
+During the course, we will use R in the Integrated Development Environment  **RStudio**, which you can download and install for your system using the links below:
+
+To make things more easy and avoid installation issues, we will use an online Cloud version of RStudio running in Posit Cloud.
+You will get the login details at the start of the course. The server will remain runing for a while after the course, but you might want to install the software locally yourself to keep on using it.
+
+Download R [here](https://cran.r-project.org/)
+Download RStudio [here](https://posit.co/download/rstudio-desktop/)
+
+## Resources and Bookdown
+This website has been created using the `{bookdown}` R package
+```{r}
+citation(package = "bookdown")
+```
+I you want to learn more on bookdown, see [this link](https://bookdown.org/)
+
+## Learning objectives
+
+After this course, you will be able to 
+
+- Explain the basics of machine learning and Deep learning in toxicology.
+- use R to perform a structure-based Generalised Read Across
+- Build a classical Machine Learning model and evaluate its performance
+- Run model-tuning to find optimal hyperparameters 
+
+## Attribution
+
+This work is distributed under a CC BY-NC 4.0 licence. Please cite this work as:
+
+Teunis, M.A.T., 2023, mltox; Workshop on 'Machine Learning in Toxicology', https://github.com/VHP4Safety/pet-nams-ml 
+
+This reference can be viewed in R, when you have build the aira package or installed it from Github, by running:
+```{r}
+citation(package = "mltox")
+```
+
+and include the original source as:
+
+Dawson DE, Lau C, Pradeep P, Sayre RR, Judson RS, Tornero-Velez R, Wambaugh JF. A Machine Learning Model to Estimate Toxicokinetic Half-Lives of Per- and Polyfluoro-Alkyl Substances (PFAS) in Multiple Species. Toxics. 2023; 11(2):98. https://doi.org/10.3390/toxics11020098 
+
+Some materials were adapted from: [TAME](https://uncsrp.github.io/Data-Analysis-Training-Modules/machine-learning-and-predictive-modeling.html#machine-learning-and-predictive-modeling), and was reproduced and adapted with permission of the authors. See for the publications and [the complete Toolbox:](https://github.com/UNCSRP/Data-Analysis-Training-Modules). This toolbox is a good place to start for Introductory Data Science, Chemical-Biological Analyses, Predictive Modeling, and Database Mining for Environmental Health Research. 
+
+Please also provide attribution to R itself
+```{r}
+citation()
+```
+
+The `{tidyvese}`
+```{r}
+citation(package = "tidyverse")
+```
+
+`{tidymodels}`
+```{r}
+citation(package = "tidymodels")
+```
+
+And `{rcdk}`
+```{r}
+citation(package = "rcdk")
+```

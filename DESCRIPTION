@@ -1,0 +1,50 @@
+Package: mltox
+Title: "Workshop on 'Machine Learning in Toxicology', https://github.com/VHP4Safety/pet-nams-ml" 
+Date: 14-11-2023
+Version: 0.1.0
+Authors@R: 
+    c(
+    person("Marc", "Teunis", , "marc.teunis@hu.nl", role = c("aut", "cre"),
+           comment = c(ORCID = "https://orcid.org/0000-0002-3496-6669"))
+    )
+Description: The source code to the materials for the Workshop: Machine Learning in Toxicology 
+License: CC BY 4.0
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.0.0
+Imports: 
+    bookdown,
+    broom.mixed,
+    caret,
+    cowplot,
+    dotwhisker,
+    dplyr,
+    DT,
+    embed,
+    fingerprint,
+    forcats,
+    ggplot2,
+    here,
+    icons,
+    janitor,
+    keras,
+    knitr,
+    lubridate,
+    magrittr,
+    naniar,
+    nycflights13,
+    rcdk,
+    rcdklibs,
+    readr,
+    recipes,
+    rmarkdown,
+    rpart,
+    rpart.plot,
+    rsample,
+    rstanarm,
+    scales,
+    skimr,
+    tensorflow,
+    timeDate,
+    vip
+    xgboost
