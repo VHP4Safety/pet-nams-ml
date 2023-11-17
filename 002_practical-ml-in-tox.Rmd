@@ -129,7 +129,7 @@ unzip(zipfile = path, exdir = here::here(
 
 The tidymodels packages allow you to specify, run, fine tune and evaluate models in a consistent way. They provide a workflow for defining and updating modelling approaches and take away the effort of accomodating syntactical differences between different model implementations, so that you can focus on the stuff that is really important. 
 
-From my experience, the overall workflow is a little hard to get your head around initially, but putting in the effort to really understand it, pays off in the long run. Certainly, I am finding myself less busy with diving into the specific documentation of a model engine, but focussing more on the actual modelling part of the job!   
+From my experience, the overall workflow is a little hard to get your head around initially, but putting in the effort to really understand it, pays off in the long run. Certainly, I am finding myself less busy with diving into the specific documentation of a model engine, but focusing more on the actual modelling part of the job!   
 
 The steps we need to walk though are:
 
@@ -451,8 +451,10 @@ Next, we will explore our improvement options: using a different model type, hyp
 ## Running a different model type, Random Forest
 We will try a Random Forest model (RF), that is able to construct a model from a selection of so-called `predictors` or `parameters`. While building the new RF model, we will also demo how to tune the hyperparameters for such a model, using a grid-search. The code used in the following fragment was adapted from [this blog by Julia Silge, who works for Posit](https://juliasilge.com/blog/sf-trees-random-tuning/)
 
+If you are unfamiliar with the inner workings of Random Forests, I recommend watching [this Youtube video](https://www.youtube.com/watch?v=J4Wdy0Wc_xQ). It clearly explains the principles of how these models work, and how you can use them to make real world predictions.
+
 ### Finding the best Random Forest model with hyperparameter tuning
-First we define a new model specification. You can find all the models available [here](https://www.tidymodels.org/find/parsnip/). Let define a new model specification that will define what model and model-engine to use and which hyperparameters we will be `tuning`. The "ranger" engine takes three hyperparameters that we need to set before running the model. We set the `trees` parameter to a fixed value and we will set the `mtry` and `min_n` to value `tune()`, which means that we will be optimizing the performance of the model by tuning these two hyperparameters. We could have chosen to also tune the `trees` parameter. It would just mean replacing the value `750` for `tune()` and including values for this parameter in the tuning grid. It would also mean a significant increase of computation time. For now, we leave it up to you to experiment with this. I ran the tuning with all three parameters, and selected `trees = 750` as the seemingly best value for `trees` from that run.   
+First we define a new model specification. You can find all the models available [here](https://www.tidymodels.org/find/parsnip/). Let define a new model specification that will define what model and model-engine to use and which hyperparameters we will be `tuning`. The "ranger" engine takes three hyperparameters that we need to set before running the model. We set the `trees` parameter to a fixed value and we will set the `mtry` and `min_n` to value `tune()`, which means that we will be optimizing the performance of the model by tuning these two hyperparameters. We could have chosen to also tune the `trees` parameter. It would just mean replacing the value `750` for `tune()` and including values for this parameter in the tuning grid. It would also mean a significant increase of computation time. For now, we leave it up to you to experiment with this. I ran the tuning with all three parameters, and selected `trees = 750` as the seemingly best value for `trees` from that run.    
 
 ```{r, mutagen_specification_random_forest}
 rf_tune_spec <- rand_forest(

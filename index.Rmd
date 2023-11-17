@@ -49,20 +49,22 @@ knitr::opts_chunk$set(
 
 Download the source code [`r icons::fontawesome("github")`](`r githuburl`)
 
-[These workshop materials was produced for the New Approach Methods Course in the Post Graduate Education Track for Toxicology (PET))
+These workshop materials were produced for the New Approach Methods Course in the Post Graduate Education Track for Toxicology (PET))
 
 
 ## Disclaimer on this work
 We would like to stress that the code and work included in this repo and workshop is experimental. It was not reviewed by a peer assessment process. The code, examples and work should be considered accordingly. The work is meant for illustrative and educational purposes. The authors do not take any responsibly for the use, re-use, application or derivates from the work included in this repository. We appreciate attribution of the original work and adapted work by the authors of this repo.
 
 ## MLTOX
-Welcome to the workshop on "Machine Learning in Toxicology" (AiRA).
+Welcome to the workshop on "Machine Learning in Toxicology" (mltox).
 This Workshop consists of 4 learning activities:
 
+ 1. Introduction to R and RStudio
  1. An introduction to Tidymodels in R (adapted from the Tidymodels documentation)
  1. An introduction to Machine Learning approaches for classification of chemicals
+ 1. Introduction to deep learning
 
-If you already are familiar with the `{tidymodels}` workflow, you might want to skip or only glimpse over activity 1.
+If you already are familiar with the R and the `{tidymodels}` workflow, you might want to skip or only glimpse over activities 1 and/or 2.
 
 You can find these lessons in the menu on the left. Each lesson starts with a short introduction by the teachers. After that, you are supposed to study the lessons yourself and make the exercises. During the lessons, you can ask questions to the teachers and the teachers will provide feedback. 
 
@@ -80,11 +82,17 @@ The course material consists of the following:
 For a very good resource on using R in Data Science we highly recommend getting a copy of this book:
  [R for Data Science](https://r4ds.had.co.nz/index.html). Part 2is based on the [Tidymodels documentation](https://www.tidymodels.org/). 
  
-Part 2 was adapted from [USEPA](https://github.com/USEPA/CompTox-PFASHalfLife). For the full publication on this work, we recommend reading: 
+Part 2 was adapted from [TAME]
 
-```
-Dawson DE, Lau C, Pradeep P, Sayre RR, Judson RS, Tornero-Velez R, Wambaugh JF. A Machine Learning Model to Estimate Toxicokinetic Half-Lives of Per- and Polyfluoro-Alkyl Substances (PFAS) in Multiple Species. Toxics. 2023; 11(2):98. https://doi.org/10.3390/toxics11020098 
-```
+## Recommended reading
+To read up on AI in Toxicology, I recommend these papers as a starting point:
+
+ * https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10616238/
+ * https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6710127/
+ * https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9609874/
+ 
+For a recent practical studie where Machine Learning was use to predict half life of PFAS, see:
+https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9962572/
 
 ## R and RStudio
 
@@ -116,16 +124,15 @@ After this course, you will be able to
 
 This work is distributed under a CC BY-NC 4.0 licence. Please cite this work as:
 
-Teunis, M.A.T., 2023, mltox; Workshop on 'Machine Learning in Toxicology', https://github.com/VHP4Safety/pet-nams-ml 
+Teunis, M.A.T., et al., 2023, mltox; Workshop on 'Machine Learning in Toxicology', https://github.com/VHP4Safety/pet-nams-ml 
+
+See the file CITATION.cff for more info on how to cite and who contributed to this work.
 
 This reference can be viewed in R, when you have build the aira package or installed it from Github, by running:
 ```{r}
+remotes::install_github("vhp4safety/mltox")
 citation(package = "mltox")
 ```
-
-and include the original source as:
-
-Dawson DE, Lau C, Pradeep P, Sayre RR, Judson RS, Tornero-Velez R, Wambaugh JF. A Machine Learning Model to Estimate Toxicokinetic Half-Lives of Per- and Polyfluoro-Alkyl Substances (PFAS) in Multiple Species. Toxics. 2023; 11(2):98. https://doi.org/10.3390/toxics11020098 
 
 Some materials were adapted from: [TAME](https://uncsrp.github.io/Data-Analysis-Training-Modules/machine-learning-and-predictive-modeling.html#machine-learning-and-predictive-modeling), and was reproduced and adapted with permission of the authors. See for the publications and [the complete Toolbox:](https://github.com/UNCSRP/Data-Analysis-Training-Modules). This toolbox is a good place to start for Introductory Data Science, Chemical-Biological Analyses, Predictive Modeling, and Database Mining for Environmental Health Research. 
 

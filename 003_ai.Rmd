@@ -1,0 +1,335 @@
+# Part 3 -- AI for Toxicity Prediction
+
+In this part we experiment on using Deep Learning and more classical machine learning techniques to classify compounds, or get a prediction for the LD50 outcome. We use the same dataset as in part 3, derived from the TAME toolbox. 
+Deep Learning is a modern predictive approach where neural networks are used to train a model on labelled data. The network are able to detect pattern associated to the outcome, based on the label. There are many different architectures available to choose from. Depending on the intended task, one or more of these architectures can be chosen. Also, there are a number of implementations available to build neural networks. Popular frameworks are [PyTorch](https://pytorch.org/), [Keras](https://keras.io/) and [Tensorflow](https://www.tensorflow.org/?gclid=EAIaIQobChMIptjygcrG-wIVyOZ3Ch1omQ4MEAAYASAAEgLtF_D_BwE). PyTorch is available for Python only, whereas Keras and Tensorflow are avaible for both Python and R programming environments. Because R is relatively much used by the academic community, we use tensorflow and keras in R for this workshop. The [`{reticulate}` R package](), which is an interface to Python from R, makes it possible to setup Tensorflow in RStudio. 
+
+It can however be quite tricky to get this technically setup, especially when you are on a new Mac with M1-chip. Luckily there is are many good resources to help you along:
+
+ - https://developer.apple.com/metal/tensorflow-plugin/
+ - https://tensorflow.rstudio.com/install/
+ - https://stackoverflow.com/questions/50145643/unable-to-change-python-path-in-reticulate
+
+For natural languge processing [Hugging Face](https://huggingface.co/) models are a good place to start.
+
+I you are looking for a good resource to start on Deep Learning, see the excellent book from Manning that [is avaialble for R](https://www.manning.com/books/deep-learning-with-r) and for [Python](https://www.manning.com/books/deep-learning-with-python-second-edition)
+
+## Installing Tensorflow for R
+We follow the steps in theese [docs ](https://tensorflow.rstudio.com/install/) for installing Tensorflow on Windows computers. If you experience technical difficulties, we can try to help you during the workshop. We are also available after the workshop or via an online meeting to help you along if needed.
+
+```{r include = FALSE, eval = TRUE}
+# set CSS for objects
+knitr::opts_chunk$set(
+  class.source="Rchunk", 
+  class.output="Rout", 
+  warning = FALSE,
+  error = FALSE,
+  message = FALSE)
+```
+
+## Packages
+```{r}
+library(tensorflow)
+library(tidyverse)
+library(keras)
+```
+
+```{r include=FALSE}
+load("course_urls.RData")
+les <- 4
+```
+
+## Data
+```{r}
+substances <- read_csv(
+  here::here(
+    "data-raw",
+    "substances.csv")) |>
+  janitor::clean_names()
+
+acute_data <- read_csv(
+    here::here(
+      "data-raw",
+      "acute_tox_data.csv")) |>
+  janitor::clean_names()
+
+```
+
+## Remove duplicated SMILES
+Because we want to predict toxicity (class and continuous outcome of LD50_LM), we need to solve the issue of duplicated SMILES. Some smiles will have a label 'nontoxic', where that same smile will have a label 'toxic' when connected to a different compound. This can be problematic, because it will lead to ambiguous label - to - feature correlations.
+To solve this, I decided to just remove all observations from the data that have a duplicated SMILES. 
+```{r}
+ind <- duplicated(substances$qsar_ready_smiles)
+sum(ind)  
+
+substances[ind,] -> x
+acute_data[ind,] -> y
+
+y |> group_by(nontoxic) |> tally()
+
+## we remove the duplicates
+substances <- substances[!ind, ]
+acute_data <- acute_data[!ind, ]
+```
+
+## Preprocessing the data
+Here we combine the data to contain the fingerprints, the `dtxsid` ids and the `nontoxic` and the `ld40_lm` column
+
+```{r}
+acute_data_select <- acute_data |>
+  dplyr::select(
+    dtxsid,
+    nontoxic,
+    ld50_lm
+  )
+
+substances_select <- substances |>
+  dplyr::select(
+    dtxsid,
+    qsar_ready_smiles
+  ) 
+
+data_nn <- full_join(acute_data_select, substances_select)
+```
+
+We reproduce part of the previous section to convert the qsar ready smiles to fingerprints
+
+```{r}
+library(rcdk)
+library(rcdklibs)
+all_smiles <- substances_select$qsar_ready_smiles
+all_mols <-parse.smiles(all_smiles)
+all_mols[[1]]
+```
+
+### Computing chemical fingerprints
+
+We can run the same function over the entire 'all_mols' dataset, leveraging the `map()` function from the `{purrr}` R package of the `{tidyverse}`:
+```{r}
+all.fp <- 
+  map(all_mols, 
+      get.fingerprint, 
+      type='standard')
+
+## Convert the pf list to a df
+fp_tbl <- fingerprint::fp.to.matrix(all.fp) |> as_tibble()
+## adding the predicted class (nontoxic as column)
+
+fp_tbl <- fp_tbl |>
+  mutate(
+    class = ifelse(
+      test = acute_data_select$nontoxic == "TRUE",  ## recode the class, 0 = nontoxic, 1 = toxic
+      yes = 0,
+      no = 1),
+    ld50_lm = acute_data_select$ld50_lm) |>
+  relocate(class, ld50_lm)
+
+```
+
+## Split data into training and test set
+```{r}
+library(rsample)
+
+## seed for reproducibility
+set.seed(123)
+data_split <- initial_split(fp_tbl, prop = 3/4)
+
+## trainig data
+training_data <- training(data_split) |> 
+  select(-c(class, ld50_lm)) |> 
+  as.matrix() |>
+  array_reshape(c(nrow(training(data_split)), 1*1024))
+
+training_labels_class <- training(data_split) |> select(class) |> 
+  as.matrix() |>
+#  as.integer() |>
+  array_reshape(nrow(training(data_split)))
+
+## test data
+test_data <- testing(data_split) |>
+  select(-c(class, ld50_lm)) |> 
+  as.matrix() |>
+  array_reshape(c(nrow(testing(data_split)), 1*1024))
+
+test_labels_class <- testing(data_split) |> select(class) |> 
+  as.matrix() |>
+# as.integer() |>
+  array_reshape(nrow(testing(data_split)))
+  
+training_data[1,c(1:80)]
+training_labels_class[1:10]
+test_data[1,c(1:80)]
+test_labels_class[1:10]
+```
+
+## Neural Network for binary classification
+Here we use the fingerprints as 1D tensors, one tensor per compound
+```{r}
+set.seed(123)
+model <- keras_model_sequential(input_shape = c(1*1024)) |>
+  layer_dense(units = 1024, activation = "relu") %>%
+  layer_dropout(rate = 0.5) |>
+  layer_dense(units = 512, activation = "relu") |>
+  layer_dense(units = 512, activation = "relu") |>
+  layer_dropout(0.2) %>%
+  layer_dense(units = 16, activation = "relu") |>
+  layer_dense(units = 1, activation = "sigmoid")
+
+model %>% compile(
+  optimizer = "rmsprop",
+  loss = "binary_crossentropy",
+  metrics = "accuracy"
+)
+
+## store training in a history object so that we can see how the model is doing, also on a small validation set.
+## validation split, means that 20% of the training data is reserved for validation.
+history <- model %>% 
+  fit(training_data, 
+      training_labels_class,
+      epochs = 50,
+      verbose = 2,
+  validation_split = 0.2
+)
+
+## we can plot the history
+plot(history)
+
+## evaluate our model on thetest data
+model %>% evaluate(test_data, test_labels_class, verbose = 2)
+
+# Confusion matrix
+pred <- model %>% predict(test_data, batch_size = 10)
+y_pred = round(pred)
+confusion_matrix = table(y_pred, test_labels_class)
+confusion_matrix
+```
+
+## Optimizing the model
+The model above is quite complex and big in terms of layers and number of neurons. When we look at the model on the validation set we can see in the plot that the model is overfitting. Let's start by reducing the size and complexity of the model first.
+```{r}
+set.seed(123)
+## simpler models
+model <- keras_model_sequential(input_shape = c(1*1024)) |>
+  layer_dense(units = 512, activation = "relu") %>%
+  layer_dropout(rate = 0.9) |>
+  layer_dense(units = 512, activation = "relu") %>%
+  layer_dropout(rate = 0.1) |>
+  layer_dense(units = 1, activation = "sigmoid")
+
+model %>% compile(
+  optimizer = "rmsprop",
+  loss = "binary_crossentropy",
+  metrics = "accuracy"
+)
+
+## store training in a history object so that we can see how the model is doing, also on a small validation set.
+## validation split, means that 20% of the training data is reserved for validation.
+history <- model %>% 
+  fit(training_data, 
+      training_labels_class,
+      epochs = 20,
+      # Suppress logging.
+      verbose = 2,
+  # Calculate validation results on 20% of the training data.
+  validation_split = 0.2
+)
+
+## we can plot the history
+plot(history)
+
+## evaluate our model on thetest data
+model %>% evaluate(test_data, test_labels_class, verbose = 2)
+
+# Confusion matrix
+pred <- model %>% predict(test_data, batch_size = 10)
+y_pred = round(pred)
+confusion_matrix = table(y_pred, test_labels_class)
+confusion_matrix
+```
+
+## Prediction of a continuous outcome (regression)
+Here we will try to predict the LD50_LM score, on the basis of the chemical fingerprints as tensors.
+Because this outcome is on a continuous scale, we need a slightly different model architecture. This type of modelling approach is considered a regression problem.
+We will repeat some of the preprocessing steps, because we need a different outcome variable.
+
+```{r}
+## continuous outcome (training)
+training_labels_ld50_lm <- training(data_split) |> 
+  select(ld50_lm) |>
+  as.matrix() |>
+  array_reshape(nrow(training(data_split)))
+
+## continuous outcome (testing)
+test_labels_ld50_lm <- testing(data_split) |> select(ld50_lm) |> 
+  as.matrix() |>
+  array_reshape(nrow(testing(data_split)))
+  
+training_labels_ld50_lm[1:10]
+test_labels_ld50_lm[1:10]
+```
+
+## Regression outcome prediction
+We use the same model as above but with a different output layer. Also we specify a different outcome: MAE = Mean Absolute Error, and should be as low as possible.
+```{r}
+set.seed(123)
+model <- keras_model_sequential(input_shape = c(1*1024)) |>
+  layer_dense(units = 128, activation = "relu") %>%
+  layer_dropout(rate = 0.2) |>
+  layer_dense(units = 128, activation = "relu") %>%
+  layer_dropout(rate = 0.1) |>
+#  layer_dense(units = 16, activation = "relu") %>%
+  layer_dense(units = 1)
+
+model %>% compile(
+  optimizer = "rmsprop",
+  loss = "mse",
+  metrics = c("mae")
+)
+
+history <- model %>% 
+  fit(training_data, 
+      training_labels_ld50_lm,
+      epochs = 20,
+      # Suppress logging.
+      verbose = 2,
+  # Calculate validation results on 20% of the training data.
+  validation_split = 0.2
+)
+
+plot(history)
+
+model %>% evaluate(test_data,  test_labels_ld50_lm, verbose = 2)
+model |> predict(test_data) -> predictions
+
+predictions[1,]
+realvalue <- test_labels_ld50_lm[1]
+realvalue
+
+## lets plot the correlations
+predictions <- tibble(
+  .pred = predictions,
+  .real = test_labels_ld50_lm
+)
+
+origin <- tibble(
+  x = seq(-3, 5, length.out = 9),
+  y = seq(-3, 5, length.out = 9)
+)
+
+predictions |>
+  ggplot(aes(x = .real, y = .pred)) +
+  geom_point(shape = 1) +
+  geom_line(data = origin, aes(x = x, y = y), colour = "darkred")
+
+```
+
+## What's next?
+We could take several steps to try and improve our models. Here, I focus on the deep learning part:
+
+ 1. Use different embeddings: e.g. Graph embeddings, see https://github.com/deepchem/deepchem/blob/master/examples/tutorials/Introduction_to_Graph_Convolutions.ipynb
+ 2. Extend the validation, using k-fold validation: see e.g Deep Learning with R, page 79
+ 3. Use different architecture
+ 4. Collect more training data
+ 5. Build an ensemble model (combining multiple models), see e.g. https://pubs.acs.org/doi/abs/10.1021/acs.chemrestox.9b00259
+ 6. Combine the Read-Across and Deep Learning approaches
+ 7. Expand the feature space to biological information
+ 
