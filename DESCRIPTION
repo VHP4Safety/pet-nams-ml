@@ -49,5 +49,4 @@ Imports:
     reticulate,
     tensorflow,
     timeDate,
-    vip
     xgboost
