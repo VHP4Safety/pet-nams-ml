@@ -3,3 +3,6 @@
 ^\.Rproj\.user$
 ^mltox\.Rproj$
 original-files-dawsonetal-2023
+^mltox\.Rcheck$
+^mltox.*\.tar\.gz$
+^mltox.*\.tgz$

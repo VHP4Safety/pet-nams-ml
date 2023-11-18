@@ -7,3 +7,10 @@ AI_ASPIS_WORKSHOP.rds
 _book
 .DS_Store
 mltox-bookdown.rds
+mltox.Rcheck/
+mltox*.tar.gz
+mltox*.tgz
+runs
+r-tensorflow
+003_ai.knit.md
+index.knit.md

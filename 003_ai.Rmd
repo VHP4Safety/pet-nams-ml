@@ -3,7 +3,7 @@
 In this part we experiment on using Deep Learning and more classical machine learning techniques to classify compounds, or get a prediction for the LD50 outcome. We use the same dataset as in part 3, derived from the TAME toolbox. 
 Deep Learning is a modern predictive approach where neural networks are used to train a model on labelled data. The network are able to detect pattern associated to the outcome, based on the label. There are many different architectures available to choose from. Depending on the intended task, one or more of these architectures can be chosen. Also, there are a number of implementations available to build neural networks. Popular frameworks are [PyTorch](https://pytorch.org/), [Keras](https://keras.io/) and [Tensorflow](https://www.tensorflow.org/?gclid=EAIaIQobChMIptjygcrG-wIVyOZ3Ch1omQ4MEAAYASAAEgLtF_D_BwE). PyTorch is available for Python only, whereas Keras and Tensorflow are avaible for both Python and R programming environments. Because R is relatively much used by the academic community, we use tensorflow and keras in R for this workshop. The [`{reticulate}` R package](), which is an interface to Python from R, makes it possible to setup Tensorflow in RStudio. 
 
-It can however be quite tricky to get this technically setup, especially when you are on a new Mac with M1-chip. Luckily there is are many good resources to help you along:
+It can however be quite tricky to get this technically setup, especially when you are on a Mac with M1-chip. Luckily there is are many good resources to help you along:
 
  - https://developer.apple.com/metal/tensorflow-plugin/
  - https://tensorflow.rstudio.com/install/
@@ -31,6 +31,8 @@ knitr::opts_chunk$set(
 library(tensorflow)
 library(tidyverse)
 library(keras)
+library(tfruns)
+library(fs)
 ```
 
 ```{r include=FALSE}
@@ -56,7 +58,8 @@ acute_data <- read_csv(
 
 ## Remove duplicated SMILES
 Because we want to predict toxicity (class and continuous outcome of LD50_LM), we need to solve the issue of duplicated SMILES. Some smiles will have a label 'nontoxic', where that same smile will have a label 'toxic' when connected to a different compound. This can be problematic, because it will lead to ambiguous label - to - feature correlations.
-To solve this, I decided to just remove all observations from the data that have a duplicated SMILES. 
+To solve this, I decided to just remove all observations from the data that have a duplicated SMILES. This solution is not ideal though. It would need a more thorough search and find to connect the right label to the right compound.
+
 ```{r}
 ind <- duplicated(substances$qsar_ready_smiles)
 sum(ind)  
@@ -193,7 +196,7 @@ history <- model %>%
 ## we can plot the history
 plot(history)
 
-## evaluate our model on thetest data
+## evaluate our model on the test data
 model %>% evaluate(test_data, test_labels_class, verbose = 2)
 
 # Confusion matrix
@@ -211,8 +214,8 @@ set.seed(123)
 model <- keras_model_sequential(input_shape = c(1*1024)) |>
   layer_dense(units = 512, activation = "relu") %>%
   layer_dropout(rate = 0.9) |>
-  layer_dense(units = 512, activation = "relu") %>%
-  layer_dropout(rate = 0.1) |>
+  layer_dense(units = 32, activation = "relu") %>%
+  layer_dropout(rate = 0.6) |>
   layer_dense(units = 1, activation = "sigmoid")
 
 model %>% compile(
@@ -237,21 +240,137 @@ history <- model %>%
 plot(history)
 
 ## evaluate our model on thetest data
-model %>% evaluate(test_data, test_labels_class, verbose = 2)
+model %>% evaluate(test_data, test_labels_class, verbose = 2) -> eval_metrics
 
 # Confusion matrix
 pred <- model %>% predict(test_data, batch_size = 10)
 y_pred = round(pred)
 confusion_matrix = table(y_pred, test_labels_class)
 confusion_matrix
+
+
+cat("Loss:", eval_metrics[[1]], "\n") 
+cat("Accuracy:", eval_metrics[[2]], "\n")
 ```
+
+## Tuning a neural network
+We could keep on experimenting with different values for the different hyperparamters in the above network, but keeping manual track of the performance of all these permutations seems like a daunting and cumbersome task. Luckily, there is a better, more structured way to go about this. See for a full explanation [this tutorial on 'Tensorflow for R'](https://tensorflow.rstudio.com/guides/tfruns/tuning)
+
+Below we reproduce this example, using our network. We will focus on tuning the dropout-values first. In oder to run multiple models, I extracted the code for loading the data, converting SMILES to fingerprints, preprocessing, data split and fitting the neural network model into an .R script called `./tf-nn-qsar.R`. To easily extract r code from and RMarkdown file, look at the `purl()` function from the `{knitr}` R package. (`?knitr::purl`).
+
+Look at the file `./tf-nn-qsar.R` and find the `FLAGS`. These `FLAGS` are used to run iterations for multiple values of these `FLAGS` in the code below:
+
+This computation takes a long time, so again we are loading the dataframe with the results from disk. The `sample = 0.1` argument in `tuning_run()`, will randomly sample 10% of all passible combinations for all chosen values of the `FLAGS`. In this case this leads to `r round((4*4*6*6)*0.1, 0)` combinations. This means that the `tf-nn-qsar.R` script will be run 58 times. I included the code but not as a code chunk, so that it is not accidentally run.
+
+```{r}
+## delete existing runs
+if(dir.exists(here::here("runs"))){
+  dir_delete(here::here("runs"))}
+
+# run various combinations of dropout1 and dropout2, and units1 and units2 to find the best values
+set.seed(123)
+runs <- tuning_run("tf-nn-qsar.R", flags = list(
+  dropout1 = c(0.2, 0.3, 0.6, 0.9),
+  dropout2 = c(0.2, 0.3, 0.6, 0.9),
+  units1 = c(8, 16, 28, 64, 128, 512),
+  units2 = c(8, 16, 28, 64, 128, 512)
+), sample = 0.1) # add sample to reduce number of combinations that will be tested
+
+## write to disk
+write_rds(
+  runs,
+  here::here(
+    "data",
+    "nn-tuning-runs.rds"
+    )
+  )
+```
+
+## Find the best evaluation accuracy
+We could make a table ranked by validation (test) accuracy, and find the best values for the hyperparameters.
+
+```{r}
+## load runs from disk
+runs <- read_rds(
+  here::here(
+    "data",
+    "nn-tuning-runs.rds"
+    )
+)
+
+runs |>
+  dplyr::select(
+    metric_val_accuracy,
+    flag_dropout1,
+    flag_dropout2,
+    flag_units1,
+    flag_units2
+    ) |>
+  arrange(desc(metric_val_accuracy)) |>
+  head(1)
+
+```
+
+So, we can conclude that comopared to our manual efforts, a smaller network, with less units and less severe dropout yields the best predictive capacity (i.e. highest accuracy).
+
+We can also visualize this.
+
+```{r}
+runs |>
+  dplyr::select(
+    metric_val_accuracy,
+    flag_dropout1,
+    flag_dropout2,
+    flag_units1,
+    flag_units2
+    ) |>
+  pivot_longer(
+    flag_dropout1:flag_dropout2,
+    values_to = "values",
+    names_to = "dropouts"
+  ) |>
+  ggplot(
+    aes(
+      x = values,
+      y = metric_val_accuracy)
+  ) +
+  geom_point(aes(colour = dropouts)) -> dropouts_viz
+
+runs |>
+  dplyr::select(
+    metric_val_accuracy,
+    flag_dropout1,
+    flag_dropout2,
+    flag_units1,
+    flag_units2
+    ) |>
+  pivot_longer(
+    flag_units1:flag_units2,
+    values_to = "values",
+    names_to = "units"
+  ) |>
+  ggplot(
+    aes(
+      x = values,
+      y = metric_val_accuracy)
+  ) +
+  geom_point(aes(colour = units)) -> units_viz
+
+cowplot::plot_grid(
+  dropouts_viz,
+  units_viz
+)
+
+```
+
+To optimize the neural network hyperparameters, we could expand the grid to include a wider range of values. For now, I think it is fair to assume that we reached a plateau for the performance, on this data.
 
 ## Prediction of a continuous outcome (regression)
 Here we will try to predict the LD50_LM score, on the basis of the chemical fingerprints as tensors.
 Because this outcome is on a continuous scale, we need a slightly different model architecture. This type of modelling approach is considered a regression problem.
 We will repeat some of the preprocessing steps, because we need a different outcome variable.
 
-```{r}
+```{r, eval=FALSE}
 ## continuous outcome (training)
 training_labels_ld50_lm <- training(data_split) |> 
   select(ld50_lm) |>

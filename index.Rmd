@@ -130,7 +130,7 @@ See the file CITATION.cff for more info on how to cite and who contributed to th
 
 This reference can be viewed in R, when you have build the aira package or installed it from Github, by running:
 ```{r}
-remotes::install_github("vhp4safety/mltox")
+remotes::install_github("vhp4safety/pet-nams-ml")
 citation(package = "mltox")
 ```
 
