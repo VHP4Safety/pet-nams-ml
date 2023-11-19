@@ -23,4 +23,8 @@ bookdown::render_book(".")
 ```
 After rendering is finished, the wite can be viewed by opening "./_book/index.html" 
 
+## Citing this work
+The citation information can be found in the `./CITATION.cff` file. When using this work, please pay proper attribution, by including the citation.
 
+## Licence
+This work is published under a permissive licence. CC BY-NC 4.0. The details can be viewed in the file `./LICENCE` 
