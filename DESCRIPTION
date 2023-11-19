@@ -49,4 +49,10 @@ Imports:
     reticulate,
     tensorflow,
     timeDate,
-    xgboost
+    drc,
+    tidymodels,
+    QSARdata,
+    bundle,
+    ranger,
+    xgboost,
+    Matrix

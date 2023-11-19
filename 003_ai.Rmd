@@ -1,7 +1,7 @@
 # Part 3 -- AI for Toxicity Prediction
 
-In this part we experiment on using Deep Learning and more classical machine learning techniques to classify compounds, or get a prediction for the LD50 outcome. We use the same dataset as in part 3, derived from the TAME toolbox. 
-Deep Learning is a modern predictive approach where neural networks are used to train a model on labelled data. The network are able to detect pattern associated to the outcome, based on the label. There are many different architectures available to choose from. Depending on the intended task, one or more of these architectures can be chosen. Also, there are a number of implementations available to build neural networks. Popular frameworks are [PyTorch](https://pytorch.org/), [Keras](https://keras.io/) and [Tensorflow](https://www.tensorflow.org/?gclid=EAIaIQobChMIptjygcrG-wIVyOZ3Ch1omQ4MEAAYASAAEgLtF_D_BwE). PyTorch is available for Python only, whereas Keras and Tensorflow are avaible for both Python and R programming environments. Because R is relatively much used by the academic community, we use tensorflow and keras in R for this workshop. The [`{reticulate}` R package](), which is an interface to Python from R, makes it possible to setup Tensorflow in RStudio. 
+In this part we experiment on using Deep Learning classify compounds, or get a prediction for the LD50 outcome. 
+Deep Learning is a modern predictive approach where neural networks are used to train a model on labelled data. The networks are able to detect pattern associated to the outcome, based on the label. There are many different architectures available to choose from. Depending on the intended task, one or more of these architectures can be chosen. Also, there are a number of implementations available to build neural networks. Popular frameworks are [PyTorch](https://pytorch.org/), [Keras](https://keras.io/) and [Tensorflow](https://www.tensorflow.org/?gclid=EAIaIQobChMIptjygcrG-wIVyOZ3Ch1omQ4MEAAYASAAEgLtF_D_BwE). All platforms are avaible for both Python and R programming environments. Because R is relatively much used by the academic community, we use tensorflow and keras in R for this workshop. The [`{reticulate}` R package](https://rstudio.github.io/reticulate/), which is an interface to Python from R, makes it possible to setup Tensorflow in RStudio. 
 
 It can however be quite tricky to get this technically setup, especially when you are on a Mac with M1-chip. Luckily there is are many good resources to help you along:
 
@@ -14,7 +14,7 @@ For natural languge processing [Hugging Face](https://huggingface.co/) models ar
 I you are looking for a good resource to start on Deep Learning, see the excellent book from Manning that [is avaialble for R](https://www.manning.com/books/deep-learning-with-r) and for [Python](https://www.manning.com/books/deep-learning-with-python-second-edition)
 
 ## Installing Tensorflow for R
-We follow the steps in theese [docs ](https://tensorflow.rstudio.com/install/) for installing Tensorflow on Windows computers. If you experience technical difficulties, we can try to help you during the workshop. We are also available after the workshop or via an online meeting to help you along if needed.
+There is no need to install anything now, because we are using Posit Cloud. Your workspaces are based on the template that has all things setup for running the experiments.
 
 ```{r include = FALSE, eval = TRUE}
 # set CSS for objects
@@ -188,7 +188,7 @@ model %>% compile(
 history <- model %>% 
   fit(training_data, 
       training_labels_class,
-      epochs = 50,
+      epochs = 20,
       verbose = 2,
   validation_split = 0.2
 )
@@ -200,7 +200,7 @@ plot(history)
 model %>% evaluate(test_data, test_labels_class, verbose = 2)
 
 # Confusion matrix
-pred <- model %>% predict(test_data, batch_size = 10)
+pred <- model %>% predict(test_data, batch_size = 50)
 y_pred = round(pred)
 confusion_matrix = table(y_pred, test_labels_class)
 confusion_matrix
@@ -243,7 +243,7 @@ plot(history)
 model %>% evaluate(test_data, test_labels_class, verbose = 2) -> eval_metrics
 
 # Confusion matrix
-pred <- model %>% predict(test_data, batch_size = 10)
+pred <- model %>% predict(test_data, batch_size = 50)
 y_pred = round(pred)
 confusion_matrix = table(y_pred, test_labels_class)
 confusion_matrix
@@ -262,7 +262,7 @@ Look at the file `./tf-nn-qsar.R` and find the `FLAGS`. These `FLAGS` are used t
 
 This computation takes a long time, so again we are loading the dataframe with the results from disk. The `sample = 0.1` argument in `tuning_run()`, will randomly sample 10% of all passible combinations for all chosen values of the `FLAGS`. In this case this leads to `r round((4*4*6*6)*0.1, 0)` combinations. This means that the `tf-nn-qsar.R` script will be run 58 times. I included the code but not as a code chunk, so that it is not accidentally run.
 
-```{r}
+```
 ## delete existing runs
 if(dir.exists(here::here("runs"))){
   dir_delete(here::here("runs"))}
@@ -310,8 +310,6 @@ runs |>
   head(1)
 
 ```
-
-So, we can conclude that comopared to our manual efforts, a smaller network, with less units and less severe dropout yields the best predictive capacity (i.e. highest accuracy).
 
 We can also visualize this.
 
@@ -365,12 +363,70 @@ cowplot::plot_grid(
 
 To optimize the neural network hyperparameters, we could expand the grid to include a wider range of values. For now, I think it is fair to assume that we reached a plateau for the performance, on this data.
 
+## Running the final optimized model
+Let's train the model one more time, using the optimized values for dropout and units.
+
+```{r}
+set.seed(123)
+## simpler models
+model <- keras_model_sequential(input_shape = c(1*1024)) |>
+  layer_dense(units = 512, activation = "relu") %>%
+  layer_dropout(rate = 0.6) |>
+  layer_dense(units = 512, activation = "relu") %>%
+  layer_dropout(rate = 0.9) |>
+  layer_dense(units = 1, activation = "sigmoid")
+
+model %>% compile(
+  optimizer = "rmsprop",
+  loss = "binary_crossentropy",
+  metrics = "accuracy"
+)
+
+## store training in a history object so that we can see how the model is doing, also on a small validation set.
+## validation split, means that 20% of the training data is reserved for validation.
+history <- model %>% 
+  fit(training_data, 
+      training_labels_class,
+      epochs = 20,
+      # Suppress logging.
+      verbose = 2,
+  # Calculate validation results on 20% of the training data.
+  validation_split = 0.2
+)
+
+## we can plot the history
+plot(history)
+
+## evaluate our model on thetest data
+model %>% evaluate(test_data, test_labels_class, verbose = 2) -> eval_metrics
+
+# Confusion matrix
+pred <- model %>% predict(test_data, batch_size = 50)
+y_pred = round(pred)
+confusion_matrix = table(y_pred, test_labels_class)
+confusion_matrix
+
+
+cat("Loss:", eval_metrics[[1]], "\n") 
+cat("Accuracy:", eval_metrics[[2]], "\n")
+```
+
+<div class="question">
+##### Exercise `r les` {-}
+
+We can see that this optimized model has a moderate performance (about 0.75), at the cost of overfitting. Further experimentation, may be with the topology could fix this. Rerun the code while removing a dense layer and the consecutive dropout layer, and see what happens  
+</div>
+
+<details><summary>Click for the answer</summary>
+Removing a dense layer and the consecutive dropout layer, should reduce overfitting. You can see this when reviewing the plot showing the training history: both lines for the loss should be closer together.
+</details>
+
 ## Prediction of a continuous outcome (regression)
 Here we will try to predict the LD50_LM score, on the basis of the chemical fingerprints as tensors.
 Because this outcome is on a continuous scale, we need a slightly different model architecture. This type of modelling approach is considered a regression problem.
 We will repeat some of the preprocessing steps, because we need a different outcome variable.
 
-```{r, eval=FALSE}
+```{r}
 ## continuous outcome (training)
 training_labels_ld50_lm <- training(data_split) |> 
   select(ld50_lm) |>
@@ -395,7 +451,6 @@ model <- keras_model_sequential(input_shape = c(1*1024)) |>
   layer_dropout(rate = 0.2) |>
   layer_dense(units = 128, activation = "relu") %>%
   layer_dropout(rate = 0.1) |>
-#  layer_dense(units = 16, activation = "relu") %>%
   layer_dense(units = 1)
 
 model %>% compile(

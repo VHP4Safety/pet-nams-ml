@@ -5,6 +5,7 @@ FLAGS <- flags(
   flag_integer("units2", 64)
 )
 
+batches <- 50
 
 ## -------------------------------------------------------------------------------------------------
 library(tensorflow)
@@ -159,7 +160,7 @@ plot(history)
 model %>% evaluate(test_data, test_labels_class, verbose = 2) -> eval_metrics
 
 # Confusion matrix
-pred <- model %>% predict(test_data, batch_size = 10)
+pred <- model %>% predict(test_data, batch_size = batches)
 y_pred = round(pred)
 confusion_matrix = table(y_pred, test_labels_class)
 confusion_matrix

@@ -183,22 +183,14 @@ The `mutagen` data was already fitted with a number of models. The Github repo c
 load(
   here::here(
     "data",
-    "mutagen",
-    "data",
     "metrics_wf_set.Rda"))
 load(here::here(
-    "data",
-    "mutagen",
     "data",
     "metrics_xgb.Rda"))
 load(here::here(
     "data",
-    "mutagen",
-    "data",
     "xgb_final_fit.Rda"))
 load(here::here(
-    "data",
-    "mutagen",
     "data",
     "final_fit.Rda"))
 ```
@@ -492,9 +484,9 @@ mutagen_folds
 ```
 
 ### Running the initial tuning 
-Initially we will use a grid tuning where we are just setting the dimensions of the grid (`grid = 20`). The `workflow` and cross validation `folds` are the input for this grid tuning. This step takes a bit longer.
+Initially we will use a grid tuning where we are just setting the dimensions of the grid (`grid = 20`). The `workflow` and cross validation `folds` are the input for this grid tuning. This step takes a bit longer so I outcommented the code, and we will load the tuned results from disk to see it.
 
-```{r, inital_tune}
+```{r, inital_tune, eval=FALSE}
 registerDoMC(cores = max(1, parallelly::availableCores() - 1))  
 
  tictoc::tic()
@@ -508,6 +500,14 @@ registerDoMC(cores = max(1, parallelly::availableCores() - 1))
 
 tune_res
 
+## to disk
+write_rds(
+  tune_res, 
+  here::here(
+    "data",
+    "rf_initial tune.rds"
+  )
+)
 ## get timings
 tictoc::tic.log(format = TRUE)
 ```
@@ -516,6 +516,13 @@ tictoc::tic.log(format = TRUE)
 We chose a small grid of only 4 points for each tuning parameter and a low number of trees to keep the run time down. Note that if you increase these numbers, run time will become slower up to the point that you either need to wait for several hours or run things on a larger machine. If you would like to time runtime, you could use [the `{tictoc}` package](https://www.jumpingrivers.com/blog/timing-in-r/). The output can be retrieved by printing `toc.log(format = TRUE)` to the console to get the elapsed time, since tic(). 
 
 ```{r, visualize_inital_tune}
+
+tune_res <- read_rds(
+   here::here(
+    "data",
+    "rf_initial tune.rds"
+  )
+)
 tune_res %>%
   collect_metrics() %>%
   filter(.metric == "roc_auc") %>%
@@ -528,7 +535,6 @@ tune_res %>%
   geom_point(show.legend = FALSE) +
   facet_wrap(~parameter, scales = "free_x") +
   labs(x = NULL, y = "AUC")
-
 
 ```
 
