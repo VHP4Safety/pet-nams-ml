@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this software and educational materials, please cite it as below."
+authors:
+- family-names: "Teunis"
+  given-names: "Marc"
+  orcid: "https://orcid.org/0000-0002-3496-6669"
+- family-names: "De Haan"
+  given-names: "Alyanne"
+  orcid: "https://orcid.org/0000-0003-0896-0906"
+- family-names: "Corradi"
+  orcid: "https://orcid.org/0000-0001-8185-5913"
+  given-names: "Marie"
+title: "mltox; Machine Learning in Toxicology"
+version: 1.0.0
+doi:
+date-released: 2023-12-14
+url: "https://github.com/VHP4Safety"
