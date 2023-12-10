@@ -29,8 +29,10 @@ knitr::opts_chunk$set(
 ## Packages
 ```{r}
 library(tensorflow)
+#tensorflow::install_tensorflow()
 library(tidyverse)
 library(keras)
+#keras::install_keras()
 library(tfruns)
 library(fs)
 ```

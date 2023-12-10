@@ -1,6 +1,6 @@
 Package: mltox
 Title: "Workshop on 'Machine Learning in Toxicology', https://github.com/VHP4Safety/pet-nams-ml" 
-Date: 14-11-2023
+Date: 2013-12-14
 Version: 0.1.0
 Authors@R: 
     c(
@@ -13,7 +13,8 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.0.0
 Remotes:
-    mitchelloharawild/icons
+    mitchelloharawild/icons,
+    uashogeschoolutrecht/toolboxr
 Imports: 
     bookdown,
     broom.mixed,
@@ -37,13 +38,13 @@ Imports:
     nycflights13,
     rcdk,
     rcdklibs,
+    remotes,
     readr,
     recipes,
     rmarkdown,
     rpart,
     rpart.plot,
     rsample,
-    rstanarm,
     scales,
     skimr,
     reticulate,
@@ -55,4 +56,7 @@ Imports:
     bundle,
     ranger,
     xgboost,
-    Matrix
+    Matrix,
+    doMC,
+    finetune,
+    vip

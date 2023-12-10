@@ -1,4 +1,4 @@
-# Part 2 -- Machine Learning example for Toxicology
+# Part 2 -- Machine Learning examples for Toxicology
 
 ```{r, base_folder, include=FALSE}
 #base_folder <- here::here(
@@ -216,7 +216,7 @@ The previously run modelling results (model performance) experiments with the `m
 ```{r, plot_mutagen_models_results}
 #| fig-alt: "A ggplot2 faceted boxplot, where different model types are on the x-axis and the out-of-sample ROC AUCs associated with those models are on the y-axis. The shown metrics values range from 0 to around 0.9. The x-axis is roughly sorted by descending ROC AUC, where the left-most model, XGBoost Boosted Tree, tends to have the best performance. Other models proposed were, from left to right, Bagged Decision Tree, Support Vector Machine, Logistic Regression, Bagged MARS, and Neural Network."
 #| echo: false
-metrics_wf_set %>%
+ml_data_mutagenic <- metrics_wf_set %>%
   mutate(
     model = case_when(
       model == "boost_tree" ~ "XGBoost Boosted Tree",
@@ -227,15 +227,16 @@ metrics_wf_set %>%
       model == "mlp" ~ "Neural Networks"
     )
   ) %>%
-  filter(.metric == "roc_auc") %>%
-  arrange(desc(.estimate)) %>%
-  mutate(model = fct_inorder(model)) %>%
-  select(Model = model, `ROC AUC` = .estimate) %>%
-  ggplot() +
-  aes(x = Model, y = `ROC AUC`) +
-  geom_boxplot() +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+  filter(.metric == "roc_auc") 
+
+ml_data_mutagenic %>%
+  ggplot(
+    aes(x = model, y = .estimate)
+  ) + 
+  geom_point(aes(colour = model), position = "jitter") +
+  geom_boxplot(aes(group = model)) +
+  toolboxr::rotate_axis_labels("x", 90)
+  
 ```
 
 ### Data types
